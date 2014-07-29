@@ -2,6 +2,8 @@ package forcomp
 
 import common._
 
+import scala.collection.generic.SeqFactory
+
 object Anagrams {
 
   /** A word is simply a `String`. */
@@ -88,13 +90,12 @@ object Anagrams {
       val head: List[Occurrences] = List() :: (1 to i).map(j => List((c, j))).toList
       val tail = combinations(xs)
 
-
       val rest = for {
         x <- head
         y <- tail
       } yield x ::: y
 
-       head ::: tail ::: rest
+      head ::: tail ::: rest
     }
   }
 
@@ -108,7 +109,8 @@ object Anagrams {
     * Note: the resulting value is an occurrence - meaning it is sorted
     * and has no zero-entries.
     */
-  def subtract(x: Occurrences, y: Occurrences): Occurrences = x.map((c, j) => (c, if (y.contains((c, _)) j - y(c) else j)).filter(())
+  def subtract(x: Occurrences, y: Occurrences): Occurrences =
+    x.map { case (char, num) => (char, num - y.toMap.get(char).getOrElse(0))}.filter(_._2 > 0)
 
   /** Returns a list of all anagram sentences of the given sentence.
     *
@@ -150,6 +152,19 @@ object Anagrams {
     *
     * Note: There is only one anagram of an empty sentence.
     */
-//  def sentenceAnagrams(sentence: Sentence): List[Sentence] = ???
+
+  def sentenceAnagrams(sentence: Sentence): List[Sentence] = sentenceAnagramsRec(sentenceOccurrences(sentence))
+  
+  
+  def sentenceAnagramsRec(occur: Occurrences): List[Sentence] = occur match {
+    case Nil => List(Nil)
+    case _ => for {
+      combination <- combinations(occur)
+      if dictionaryByOccurrences.contains(combination)
+      word <- dictionaryByOccurrences(combination)
+      anagrams = sentenceAnagramsRec(subtract(occur, combination))
+      sent <- anagrams
+    } yield word :: sent
+  }
 
 }
